@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 // นำเข้า supabase ตามข้อกำหนด (หมายเหตุ: หาก Next.js ฟ้องหาไฟล์ไม่พบบนเครื่องจริงเนื่องจากโฟลเดอร์ sell อยู่ลึก 2 ชั้น ให้ปรับเป็น '../../lib/supabaseClient')
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function SellPage() {
   // State รายการสินค้าและสถานะการโหลด

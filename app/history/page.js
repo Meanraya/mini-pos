@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 // นำเข้า supabase ตามข้อกำหนดโครงสร้างโปรเจกต์
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function HistoryPage() {
   // State สำหรับเก็บรายการประวัติการขายและสถานะการโหลด

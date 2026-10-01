@@ -124,7 +124,7 @@ export default function SellPage() {
     }
   };
 
-  // ยืนยันการชำระเงินและบันทึกข้อมูล
+  // ยืนยันการชำระเงินและบันทึกข้อมูล พร้อมส่งแจ้งเตือน LINE
   const handleCheckout = async () => {
     if (cart.length === 0) {
       alert("กรุณาเลือกสินค้าลงตะกร้าอย่างน้อย 1 รายการ");
@@ -155,7 +155,14 @@ export default function SellPage() {
 
       if (salesError) throw salesError;
 
-      // 2. ตัดสต็อกสินค้าในตาราง products ทีละรายการ
+      // 2. ตัดสต็อกสินค้าในตาราง products พร้อมเตรียมข้อความแจ้งเตือน LINE
+      const lineMessages = [];
+      const thaiTime = new Date().toLocaleString("th-TH", {
+        timeZone: "Asia/Bangkok",
+        dateStyle: "short",
+        timeStyle: "medium",
+      });
+
       for (const item of cart) {
         const remainingStock = item.stock - item.qty;
         const { error: stockError } = await supabase
@@ -164,6 +171,38 @@ export default function SellPage() {
           .eq("id", item.id);
 
         if (stockError) throw stockError;
+
+        // ข้อความแจ้งเตือนการขาย
+        const itemTotal = item.price * item.qty;
+        const orderMsg = 
+`🛒 มีรายการขายใหม่!
+- สินค้า: ${item.name}
+- จำนวน: ${item.qty} ${item.unit}
+- ราคารวม: ฿${itemTotal.toLocaleString()}
+- สต๊อกคงเหลือ: ${remainingStock} ${item.unit}
+- เวลา: ${thaiTime}`;
+        lineMessages.push(orderMsg);
+
+        // เตือนภัยสต๊อกเหลือน้อย (<= 5)
+        if (remainingStock <= 5) {
+          const lowStockMsg = 
+`🚨 [เตือนภัย] สต๊อกสินค้าใกล้หมด!
+- สินค้า: ${item.name}
+- คงเหลือเพียง: ${remainingStock} ${item.unit}
+⚠️ กรุณาเติมสต๊อกสินค้าด่วน!`;
+          lineMessages.push(lowStockMsg);
+        }
+      }
+
+      // 3. ยิงแจ้งเตือนเข้า LINE ผ่าน API หลังบ้านแบบไม่บล็อกระบบ
+      if (lineMessages.length > 0) {
+        fetch("/api/line", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: lineMessages }),
+        }).catch((err) => {
+          console.warn("Failed to send LINE notification:", err);
+        });
       }
 
       alert(`✅ บันทึกการขายสำเร็จ!\nยอดรวมทั้งสิ้น ฿${grandTotal.toLocaleString()}`);
